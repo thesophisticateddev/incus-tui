@@ -1,0 +1,30 @@
+Metadata-Version: 2.4
+Name: incus-tui
+Version: 0.1.0
+Summary: A terminal UI to manage Incus containers.
+Author: incus-tui contributors
+License-Expression: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console :: Terminal
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: System :: Systems Administration
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: aiohappyeyeballs>=2.6.2
+Requires-Dist: aiohttp>=3.14.1
+Requires-Dist: aiohttp-jinja2>=1.6
+Requires-Dist: click>=8.4.1
+Requires-Dist: Jinja2>=3.1.6
+Requires-Dist: markdown-it-py>=4.2.0
+Requires-Dist: pyfiglet>=1.0.4
+Requires-Dist: pyte>=0.8.2
+Requires-Dist: rich>=15.0.0
+Requires-Dist: textual>=8.2.7
+Provides-Extra: dev
+Requires-Dist: pytest>=9.1.1; extra == "dev"
+Requires-Dist: pytest-asyncio>=1.4.0; extra == "dev"

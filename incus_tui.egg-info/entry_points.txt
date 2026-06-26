@@ -1,0 +1,2 @@
+[console_scripts]
+incus-tui = incus_tui.__main__:main

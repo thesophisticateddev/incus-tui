@@ -1,0 +1,34 @@
+{
+    "version": "$VERSION",
+    "description": "A terminal UI to manage Incus containers",
+    "homepage": "https://github.com/$GITHUB_REPO/incus-tui",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/$GITHUB_REPO/releases/download/$VERSION/incus-tui-$VERSION-windows-x86_64.zip",
+            "hash": "$WINDOWS_ZIP_SHA256",
+            "bin": "incus-tui.exe",
+            "shortcuts": [
+                ["incus-tui.exe", "incus-tui"]
+            ]
+        }
+    },
+    "checkver": {
+        "github": "https://github.com/$GITHUB_REPO"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/$GITHUB_REPO/releases/download/$VERSION/incus-tui-$VERSION-windows-x86_64.zip",
+                "hash": {
+                    "find": "$WINDOWS_ZIP_SHA256"
+                }
+            }
+        }
+    },
+    "notes": [
+        "incus-tui requires the 'incus' CLI to be installed and on PATH.",
+        "The embedded terminal and file-manager features require a POSIX platform (Linux/macOS).",
+        "On Windows, container listing and creation work; shell/SSH/mount require Linux/macOS."
+    ]
+}

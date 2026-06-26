@@ -1,0 +1,18 @@
+# Maintainer: incus-tui contributors
+# Contributor: $MAINTAINER
+
+pkgname=incus-tui
+pkgver=$VERSION
+pkgrel=1
+pkgdesc="A terminal UI to manage Incus containers"
+url="https://github.com/$GITHUB_REPO/incus-tui"
+license=('MIT')
+arch=('x86_64')
+provides=("${pkgname}")
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/$GITHUB_REPO/releases/download/${pkgver}/incus-tui-${pkgver}-linux-x86_64.tar.gz")
+sha256sums=('$LINUX_TAR_SHA256')
+
+package() {
+    install -Dm755 "${srcdir}/incus-tui-${pkgver}-linux-x86_64/incus-tui" "${pkgdir}/usr/bin/incus-tui"
+}
+

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "incus-tui"
+version = "0.1.0"
+description = "A terminal UI to manage Incus containers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    {name = "incus-tui contributors"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console :: Terminal",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "aiohappyeyeballs>=2.6.2",
+    "aiohttp>=3.14.1",
+    "aiohttp-jinja2>=1.6",
+    "click>=8.4.1",
+    "Jinja2>=3.1.6",
+    "markdown-it-py>=4.2.0",
+    "pyfiglet>=1.0.4",
+    "pyte>=0.8.2",
+    "rich>=15.0.0",
+    "textual>=8.2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[project.scripts]
+incus-tui = "incus_tui.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["incus_tui*"]
+exclude = ["tenv*", "tests*", "plans*", "*.tenv*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "incus_tui.__about__.__version__"}
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore:This process .* is multi-threaded.*:DeprecationWarning",
+]

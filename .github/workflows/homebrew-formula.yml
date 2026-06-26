@@ -1,0 +1,60 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-formula:
+    name: Update Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}-tap
+          path: homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Fetch PyPI release info
+        id: pypi
+        run: |
+          URL="https://pypi.org/pypi/incus-tui/${{ github.ref_name }}/json"
+          echo "sha256=$(curl -s "$URL" | python -c '
+import json,sys
+d=json.load(sys.stdin)
+# Find the first source tarball
+for f in d["urls"]:
+    if f["url"].endswith(".tar.gz"):
+        print(f["digests"]["sha256"])
+        break
+')" >> $GITHUB_OUTPUT
+          echo "url=$(curl -s "$URL" | python -c '
+import json,sys
+d=json.load(sys.stdin)
+for f in d["urls"]:
+    if f["url"].endswith(".tar.gz"):
+        print(f["url"])
+        break
+')" >> $GITHUB_OUTPUT
+
+      - name: Update formula
+        run: |
+          sed -i \
+            -e "s|\$VERSION|${{ github.ref_name }}|g" \
+            -e "s|\$SOURCE_SHA256|${{ steps.pypi.outputs.sha256 }}|g" \
+            -e "s|\$GITHUB_REPO|${{ github.repository }}|g" \
+            homebrew-tap/Formula/incus-tui.rb
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          path: homebrew-tap
+          commit-message: "incus-tui ${{ github.ref_name }}"
+          title: "incus-tui ${{ github.ref_name }}"
+          body: |
+            Updated by GitHub Actions on release [${{ github.ref_name }}](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}).
+            PyPI: https://pypi.org/project/incus-tui/${{ github.ref_name }}/
+          branch: update-to-${{ github.ref_name }}
+          delete-branch: true
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
