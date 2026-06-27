@@ -128,3 +128,165 @@ def test_validate_memory():
         assert incus.validate_memory(good) is None
     for bad in ("2", "lots", "2 GiB", "2Gigs"):
         assert incus.validate_memory(bad) is not None
+
+
+# ---------------------------------------------------------------------------
+# Daemon status
+# ---------------------------------------------------------------------------
+
+_FAKE_INFO = """
+{
+  "server_version": "6.0.0",
+  "client_version": "6.0.0",
+  "server_address": "0.0.0.0:8443",
+  "clustered": false,
+  "storage": [
+    {"driver": "zfs", "pool": "default"}
+  ]
+}
+"""
+
+
+def test_daemon_status_reachable(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    monkeypatch.setattr(incus.subprocess, "run", _fake_run(stdout=_FAKE_INFO))
+
+    status = incus.daemon_status()
+    assert status.reachable
+    assert status.server_version == "6.0.0"
+    assert status.client_version == "6.0.0"
+    assert status.clustered is False
+    assert status.storage_backends == ["zfs"]
+    assert status.version_skew is False
+
+
+def test_daemon_status_unreachable_connection_refused(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    monkeypatch.setattr(
+        incus.subprocess, "run",
+        _fake_run(returncode=1, stderr="Error: Get \"unix:///var/lib/incus/unix.sock\": connection refused")
+    )
+
+    status = incus.daemon_status()
+    assert not status.reachable
+    assert "not reachable" in status.message
+
+
+def test_daemon_status_binary_missing(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: None)
+    status = incus.daemon_status()
+    assert not status.reachable
+    assert "not found" in status.message
+
+
+def test_daemon_status_version_skew(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    skew_info = """
+    {
+      "server_version": "6.0.0",
+      "client_version": "6.1.0",
+      "server_address": "0.0.0.0:8443",
+      "clustered": false,
+      "storage": []
+    }
+    """
+    monkeypatch.setattr(incus.subprocess, "run", _fake_run(stdout=skew_info))
+    status = incus.daemon_status()
+    assert status.reachable
+    assert status.version_skew is True
+
+
+# ---------------------------------------------------------------------------
+# Command builders (daemon)
+# ---------------------------------------------------------------------------
+
+def test_server_config_commands(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    assert incus.server_config_show_command() == ["/usr/bin/incus", "config", "show"]
+    assert incus.server_config_get_command("core.https_address") == [
+        "/usr/bin/incus", "config", "get", "core.https_address"
+    ]
+    assert incus.server_config_set_command("core.debug", "true") == [
+        "/usr/bin/incus", "config", "set", "core.debug", "true"
+    ]
+    assert incus.server_config_edit_command() == ["/usr/bin/incus", "config", "edit"]
+
+
+def test_trust_commands(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    assert incus.trust_list_command() == [
+        "/usr/bin/incus", "config", "trust", "list", "--format", "json"
+    ]
+    assert incus.trust_add_command("laptop", "/tmp/cert.crt") == [
+        "/usr/bin/incus", "config", "trust", "add", "--name", "laptop", "/tmp/cert.crt"
+    ]
+    assert incus.trust_remove_command("fp123") == [
+        "/usr/bin/incus", "config", "trust", "remove", "fp123"
+    ]
+    assert incus.trust_list_tokens_command() == [
+        "/usr/bin/incus", "config", "trust", "list-tokens", "--format", "json"
+    ]
+    assert incus.trust_revoke_token_command("tok123") == [
+        "/usr/bin/incus", "config", "trust", "revoke-token", "tok123"
+    ]
+    assert incus.trust_add_token_command("ci", expiry="24h", projects=["default"]) == [
+        "/usr/bin/incus", "config", "trust", "add-token", "--name", "ci",
+        "--expiry", "24h", "--project", "default"
+    ]
+
+
+def test_admin_init_commands(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    assert incus.admin_init_dump_command() == ["/usr/bin/incus", "admin", "init", "--dump"]
+    assert incus.admin_init_minimal_command() == ["/usr/bin/incus", "admin", "init", "--minimal"]
+    assert incus.admin_init_interactive_command() == ["/usr/bin/incus", "admin", "init"]
+    assert incus.admin_init_auto_command() == ["/usr/bin/incus", "admin", "init", "--auto"]
+    assert incus.admin_init_auto_command(
+        network_address="0.0.0.0:8443",
+        storage_backend="zfs",
+        storage_loop_size=10,
+    ) == [
+        "/usr/bin/incus", "admin", "init", "--auto",
+        "--network-address", "0.0.0.0:8443",
+        "--storage-backend", "zfs",
+        "--storage-create-loop", "10",
+    ]
+
+
+def test_admin_waitready_shutdown_commands(monkeypatch):
+    monkeypatch.setattr(incus.shutil, "which", lambda _: "/usr/bin/incus")
+    assert incus.admin_waitready_command() == ["/usr/bin/incus", "admin", "waitready"]
+    assert incus.admin_waitready_command(timeout=30) == [
+        "/usr/bin/incus", "admin", "waitready", "-t", "30"
+    ]
+    assert incus.admin_shutdown_command() == [
+        "/usr/bin/incus", "admin", "shutdown", "-t", "60"
+    ]
+    assert incus.admin_shutdown_command(force=True, timeout=30) == [
+        "/usr/bin/incus", "admin", "shutdown", "-f", "-t", "30"
+    ]
+
+
+def test_service_commands_systemd(monkeypatch):
+    monkeypatch.setattr(incus.os.path, "exists", lambda p: p == "/run/systemd/system")
+    assert incus.service_start_command() == ["systemctl", "start", "incus.service"]
+    assert incus.service_stop_command() == ["systemctl", "stop", "incus.service"]
+    assert incus.service_restart_command() == ["systemctl", "restart", "incus.service"]
+    assert incus.service_enable_command() == ["systemctl", "enable", "incus.service"]
+    assert incus.service_disable_command() == ["systemctl", "disable", "incus.service"]
+    assert incus.service_status_command() == ["systemctl", "is-active", "incus.service"]
+
+
+def test_service_commands_unsupported(monkeypatch):
+    monkeypatch.setattr(incus.os.path, "exists", lambda p: False)
+    for fn in (
+        incus.service_start_command,
+        incus.service_stop_command,
+        incus.service_restart_command,
+        incus.service_enable_command,
+        incus.service_disable_command,
+        incus.service_status_command,
+    ):
+        with pytest.raises(incus.ServiceError):
+            fn()
+

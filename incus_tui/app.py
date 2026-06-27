@@ -6,6 +6,7 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, OptionList
 
+from incus_tui.components.admin import AdminScreen
 from incus_tui.components.containers import ContainerScreen
 from incus_tui.components.create import CreateContainerScreen
 from incus_tui.components.welcome import MarkdownHeader, Welcome
@@ -29,6 +30,8 @@ class IncusClientApp(App):
             self.push_screen(ContainerScreen())
         elif event.option.prompt == "Create a new container":
             self.push_screen(CreateContainerScreen())
+        elif event.option.prompt == "Manage daemon":
+            self.push_screen(AdminScreen())
         else:
             self.notify("Not implemented yet.", severity="warning")
 

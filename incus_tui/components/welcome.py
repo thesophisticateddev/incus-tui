@@ -54,7 +54,5 @@ class Welcome(HorizontalGroup):
         yield OptionList(
             "Create a new container",
             "List containers",
-            "Delete a container",
-            "Update a container",
-            "View container details",
+            "Manage daemon",
         )
