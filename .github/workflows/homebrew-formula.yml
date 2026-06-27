@@ -21,22 +21,22 @@ jobs:
         run: |
           URL="https://pypi.org/pypi/incus-tui/${{ github.ref_name }}/json"
           echo "sha256=$(curl -s "$URL" | python -c '
-import json,sys
-d=json.load(sys.stdin)
-# Find the first source tarball
-for f in d["urls"]:
-    if f["url"].endswith(".tar.gz"):
-        print(f["digests"]["sha256"])
-        break
-')" >> $GITHUB_OUTPUT
-          echo "url=$(curl -s "$URL" | python -c '
-import json,sys
-d=json.load(sys.stdin)
-for f in d["urls"]:
-    if f["url"].endswith(".tar.gz"):
-        print(f["url"])
-        break
-')" >> $GITHUB_OUTPUT
+          import json,sys
+          d=json.load(sys.stdin)
+          # Find the first source tarball
+          for f in d["urls"]:
+              if f["url"].endswith(".tar.gz"):
+                  print(f["digests"]["sha256"])
+                  break
+          ')" >> $GITHUB_OUTPUT
+                    echo "url=$(curl -s "$URL" | python -c '
+          import json,sys
+          d=json.load(sys.stdin)
+          for f in d["urls"]:
+              if f["url"].endswith(".tar.gz"):
+                  print(f["url"])
+                  break
+          ')" >> $GITHUB_OUTPUT
 
       - name: Update formula
         run: |
